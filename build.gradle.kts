@@ -1,3 +1,5 @@
+import kotlin.reflect.jvm.internal.impl.resolve.scopes.receivers.ContextReceiver
+
 plugins {
     kotlin("jvm") version "1.8.21"
 }
@@ -20,4 +22,15 @@ tasks.test {
 
 kotlin {
     jvmToolchain(11)
+}
+
+kotlin {
+//    explicitApi()
+//    explicitApiWarning()
+
+    sourceSets.all {
+        languageSettings {
+            enableLanguageFeature("ContextReceivers")
+        }
+    }
 }
