@@ -17,7 +17,7 @@ class PseudoClosableExample {
         if (this::producer.isInitialized) {
             runBlocking {
                 runCatching {
-                    producer.close()
+                    producer.stop()
                 }.onFailure { println("failed to close queue producer: $it") }
             }
         }
@@ -27,7 +27,7 @@ class PseudoClosableExample {
         if (this::broker.isInitialized) {
             runBlocking {
                 runCatching {
-                    broker.close()
+                    broker.shutdown()
                 }.onFailure { println("failed to close queue producer: $it") }
             }
         }
@@ -75,8 +75,8 @@ class PseudoClosableExample2 {
                 runCatching {
                     when (closeable) {
                         is A -> closeable.close()
-                        is B -> closeable.close()
-                        is C -> closeable.close()
+                        is B -> closeable.shutdown()
+                        is C -> closeable.stop()
                         else -> throw IllegalArgumentException("unsupported class $className") }
                 }.onFailure { println("failed to close $className: $it") }
             }
@@ -91,9 +91,13 @@ class PseudoClosableFunExample {
     lateinit var producer: C
 
     fun appCleanup() {
-        stopResource({ this::producer.isInitialized }) { producer.close() }
-        stopResource({ this::broker.isInitialized }) { broker.close() }
-        stopResource({ this::service.isInitialized }) { service.close() }
+        stopResource({ this::producer.isInitialized }) { producer.stop() }
+        stopResource({ this::broker.isInitialized }) { broker.shutdown() }
+
+        stopResource(
+            predicate = { this::service.isInitialized },
+            close = { service.close() }
+        )
     }
 
     private fun stopResource(predicate: () -> Boolean, close: suspend () -> Unit) {
@@ -111,6 +115,6 @@ class PseudoClosableFunExample {
 
 // region fake resources
 class A { suspend fun close() {} }
-class B { suspend fun close() {} }
-class C { suspend fun close() {} }
+class B { suspend fun shutdown() {} }
+class C { suspend fun stop() {} }
 // endregion
